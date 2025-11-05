@@ -1,12 +1,12 @@
 FROM php:8.2-cli
 
-# Install system dependencies and PHP extensions
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libonig-dev libxml2-dev \
+    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libxml2-dev \
     && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath tokenizer xml ctype json
+    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath
 
-# Install Node.js
+# Install Node.js (via NodeSource)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs
 
@@ -16,7 +16,7 @@ WORKDIR /app
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
 
-# Install Composer
+# Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer
 
@@ -32,9 +32,15 @@ COPY . .
 # Install Node dependencies and build assets
 RUN npm install && npm run build
 
+# Set permissions for writable directories
+RUN chmod -R 775 storage bootstrap/cache database
+
 # Copy and configure entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Expose port for Laravel's built-in server
 EXPOSE 80
