@@ -698,25 +698,26 @@ public function initiate(Request $request)
 
 public function verifyGuestForm(Request $request)
 {
-    // Step 1: Extract token from query string
-    $token = $request->query('token');
-    Log::info('Token received for verification', ['token' => $token]);
+    try {
+        $token = $request->query('token');
+        \Log::info('Token received for verification', ['token' => $token]);
 
-    // Step 2: Look up reservation by token
-    $reservation = GuestReservation::where('token', $token)->first();
-    Log::info('Reservation lookup result', ['reservation' => $reservation]);
+        $reservation = GuestReservation::where('token', $token)->first();
+        \Log::info('Reservation lookup result', ['reservation' => $reservation]);
 
-    // Step 3: Handle missing reservation
-    if (! $reservation) {
-        Log::warning('No reservation found for token', ['token' => $token]);
-        return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
+        if (! $reservation) {
+            \Log::warning('No reservation found for token', ['token' => $token]);
+            return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
+        }
+
+        return view('user.reservations.verify-guest', [
+            'token' => $token,
+            'email' => $reservation->email,
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('verifyGuestForm exception', ['error' => $e->getMessage()]);
+        return redirect()->route('welcome')->with('error', 'Something went wrong. Please try again.');
     }
-
-    // Step 4: Load verification view
-    return view('user.reservations.verify-guest', [
-        'token' => $token,
-        'email' => $reservation->email,
-    ]);
 }
 
 public function verifyGuestSubmit(Request $request)
