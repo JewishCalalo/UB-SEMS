@@ -1,10 +1,11 @@
 FROM php:8.2-cli
 
-# Install system dependencies including oniguruma support
+# Install system dependencies including GD and oniguruma
 RUN apt-get update && apt-get install -y \
-    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libxml2-dev libonig-dev \
+    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libxml2-dev libonig-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath
+    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath gd
 
 # Install Node.js (via NodeSource)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
