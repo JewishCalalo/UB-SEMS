@@ -17,6 +17,7 @@ use App\Http\Controllers\EquipmentReturnController;
 use App\Http\Controllers\InstanceController;
 use App\Http\Controllers\Auth\AuthCheckController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\EquipmentTypeController;
 use App\Http\Controllers\BlacklistController;
 
@@ -26,6 +27,15 @@ Route::get('/log-test', function () {
     \Log::info('Log test route hit');
     return 'OK';
 });
+Route::get('/mail-test', function () {
+    Mail::raw('This is a test email from UB SEMS.', function ($message) {
+        $message->to('billydhenclir@gmail.com')
+                ->subject('Test Email');
+    });
+
+    return 'Mail sent';
+});
+
 
 // API route for authentication check
 Route::get('/api/check-auth', [AuthCheckController::class, 'check'])->name('api.check-auth');
