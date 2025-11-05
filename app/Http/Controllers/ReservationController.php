@@ -699,14 +699,19 @@ public function initiate(Request $request)
 public function verifyGuestForm(Request $request)
 {
     $token = $request->query('token');
+    \Log::info('Token received:', ['token' => $token]);
+
     $reservation = GuestReservation::where('token', $token)->first();
+    \Log::info('Reservation found:', ['reservation' => $reservation]);
 
     if (! $reservation) {
         return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
     }
 
-    $email = $reservation->email;
-    return view('user.reservations.verify-guest', compact('token', 'email'));
+    return view('user.reservations.verify-guest', [
+        'token' => $token,
+        'email' => $reservation->email,
+    ]);
 }
 public function verifyGuestSubmit(Request $request)
 {
