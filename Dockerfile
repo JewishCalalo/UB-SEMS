@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath gd redis
+    && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath gd
 
 # Install Node.js (via NodeSource)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
