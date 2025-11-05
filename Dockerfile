@@ -31,7 +31,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy the rest of the app
 COPY . .
 
-# Install Node dependencies and build assets
+# Install Node dependencies and build frontend assets
 RUN npm install && npm run build
 
 # Set permissions for writable directories
