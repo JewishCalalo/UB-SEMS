@@ -40,7 +40,7 @@ Route::get('/mail-test', function () {
 
 
 Route::get('/mailtrap-api-test', function () {
-    $response = Http::withToken('YOUR_API_TOKEN')
+    $response = Http::withToken('28a066ac7e4fab5bad03afcfa446243e')
         ->post('https://send.api.mailtrap.io/api/send', [
             'to' => [
                 [
