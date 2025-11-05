@@ -14,7 +14,10 @@ use App\Http\Requests\Reservations\ReservationUpdateRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\GuestReservation;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 use Illuminate\Support\Facades\DB;
 use App\Rules\UbaguioEmail;
@@ -631,52 +634,49 @@ class ReservationController extends Controller
     }
 
     // New guest-first verification flow (no reservation created until OTP verified)
-    public function initiate(\Illuminate\Http\Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'contact_number' => 'required|string|max:20',
-            'department' => 'required|string|max:255',
-            'department_other' => 'nullable|string|max:255',
-            'borrow_date' => 'required|date',
-            'return_date' => 'required|date|after_or_equal:borrow_date',
-            'borrow_time' => 'nullable|string',
-            'return_time' => 'nullable|string',
-            'reason_type' => 'nullable|string',
-            'reason' => 'required|string',
-            'additional_details' => 'nullable|string',
-            'cart_data' => 'required|string',
-        ]);
 
-        $token = bin2hex(random_bytes(16));
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        cache()->put('pending_res_'.$token, [
-            'payload' => $data,
-            'hash' => hash('sha256', $code),
-            'expires_at' => now()->addMinutes(15)
-        ], 900);
+public function initiate(Request $request)
+{
+    $data = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email',
+        'contact_number' => 'required|string|max:20',
+        'department' => 'required|string|max:255',
+        'department_other' => 'nullable|string|max:255',
+        'borrow_date' => 'required|date',
+        'return_date' => 'required|date|after_or_equal:borrow_date',
+        'borrow_time' => 'nullable|string',
+        'return_time' => 'nullable|string',
+        'reason_type' => 'nullable|string',
+        'reason' => 'required|string',
+        'additional_details' => 'nullable|string',
+        'cart_data' => 'required|string',
+    ]);
 
-        try {
-            \Mail::send('emails.guest-otp', [
-                'code' => $code,
-                'name' => $data['name'] ?? null,
-                'expiresIn' => 15,
-            ], function($m) use ($data) {
-                $m->to($data['email'])->subject('SEMS Reservation Verification Code');
-            });
-        } catch (\Exception $e) {
-            \Log::error('Failed to send verification code', ['error' => $e->getMessage()]);
-        }
+    $token = Str::uuid();
+    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'redirect_url' => route('reservations.verify-guest', ['token' => $token])
-            ]);
-        }
-        return redirect()->route('reservations.verify-guest', ['token' => $token]);
+    $reservation = GuestReservation::create(array_merge($data, [
+        'token' => $token,
+        'verification_code' => $code,
+        'is_verified' => false,
+        'expires_at' => now()->addMinutes(15),
+    ]));
+
+    try {
+        Mail::send('emails.guest-otp', [
+            'code' => $code,
+            'name' => $data['name'],
+            'expiresIn' => 15,
+        ], function ($m) use ($data) {
+            $m->to($data['email'])->subject('SEMS Reservation Verification Code');
+        });
+    } catch (\Exception $e) {
+        \Log::error('Failed to send verification code', ['error' => $e->getMessage()]);
     }
+
+    return redirect()->route('reservations.verify-guest', ['token' => $token]);
+}
 
     
 
@@ -692,64 +692,69 @@ public function verifyGuestForm(Request $request)
     $email = $reservation->email;
     return view('user.reservations.verify-guest', compact('token', 'email'));
 }
+public function verifyGuestSubmit(Request $request)
+{
+    $request->validate([
+        'token' => 'required',
+        'code' => 'required|string|size:6',
+    ]);
 
-    public function verifyGuestSubmit(\Illuminate\Http\Request $request)
-    {
-        $request->validate(['token' => 'required', 'code' => 'required|string|size:6']);
-        $token = $request->input('token');
-        $entry = cache()->get('pending_res_'.$token);
-        if (!$entry || ($entry['expires_at'] ?? now()->subMinute())->lt(now())) {
-            return back()->withErrors(['code' => 'Verification code expired. Please request a new code.']);
-        }
-        if (!hash_equals($entry['hash'] ?? '', hash('sha256', $request->input('code')))) {
-            return back()->withErrors(['code' => 'Invalid verification code.']);
-        }
+    $reservationEntry = GuestReservation::where('token', $request->token)
+        ->where('verification_code', $request->code)
+        ->where('expires_at', '>', now())
+        ->where('is_verified', false)
+        ->first();
 
-        // Create reservation now using existing logic (similar to store)
-        $payload = $entry['payload'];
-        $finalDepartment = ($payload['department'] === 'Other' && !empty($payload['department_other'])) ? $payload['department_other'] : $payload['department'];
-
-        DB::beginTransaction();
-        try {
-            $reservation = \App\Models\Reservation::create([
-                'user_id' => null,
-                'name' => $payload['name'],
-                'email' => $payload['email'],
-                'contact_number' => $payload['contact_number'],
-                'department' => $finalDepartment,
-                'borrow_date' => $payload['borrow_date'],
-                'return_date' => $payload['return_date'],
-                'borrow_time' => $payload['borrow_time'] ?? null,
-                'return_time' => $payload['return_time'] ?? null,
-                'reason' => $payload['reason'],
-                'additional_details' => $payload['additional_details'] ?? null,
-                'status' => 'pending',
-                'reservation_code' => 'RES-' . strtoupper(str()->random(8)),
-            ]);
-
-            // Create items
-            $cartItems = json_decode($payload['cart_data'], true) ?: [];
-            foreach ($cartItems as $item) {
-                if (!is_array($item)) continue;
-                \App\Models\ReservationItem::create([
-                    'reservation_id' => $reservation->id,
-                    'equipment_id' => $item['equipment_id'],
-                    'quantity_requested' => $item['quantity'],
-                    'quantity_approved' => 0,
-                    'status' => 'pending'
-                ]);
-            }
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['code' => 'Failed to complete reservation. '.$e->getMessage()]);
-        }
-
-        cache()->forget('pending_res_'.$token);
-        return redirect()->route('reservations.guest-confirmation', $reservation->id)
-            ->with('success', 'Reservation submitted successfully.');
+    if (! $reservationEntry) {
+        return back()->withErrors(['code' => 'Invalid or expired verification code.']);
     }
+
+    $payload = $reservationEntry->toArray();
+    $finalDepartment = ($payload['department'] === 'Other' && !empty($payload['department_other']))
+        ? $payload['department_other']
+        : $payload['department'];
+
+    DB::beginTransaction();
+    try {
+        $reservation = Reservation::create([
+            'user_id' => null,
+            'name' => $payload['name'],
+            'email' => $payload['email'],
+            'contact_number' => $payload['contact_number'],
+            'department' => $finalDepartment,
+            'borrow_date' => $payload['borrow_date'],
+            'return_date' => $payload['return_date'],
+            'borrow_time' => $payload['borrow_time'] ?? null,
+            'return_time' => $payload['return_time'] ?? null,
+            'reason' => $payload['reason'],
+            'additional_details' => $payload['additional_details'] ?? null,
+            'status' => 'pending',
+            'reservation_code' => 'RES-' . strtoupper(str()->random(8)),
+        ]);
+
+        $cartItems = json_decode($payload['cart_data'], true) ?: [];
+        foreach ($cartItems as $item) {
+            if (!is_array($item)) continue;
+
+            ReservationItem::create([
+                'reservation_id' => $reservation->id,
+                'equipment_id' => $item['equipment_id'],
+                'quantity_requested' => $item['quantity'],
+                'quantity_approved' => 0,
+                'status' => 'pending',
+            ]);
+        }
+
+        $reservationEntry->update(['is_verified' => true]);
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors(['code' => 'Failed to complete reservation. ' . $e->getMessage()]);
+    }
+
+    return redirect()->route('reservations.guest-confirmation', $reservation->id)
+        ->with('success', 'Reservation submitted successfully.');
+}
 
     public function edit(Reservation $reservation)
     {
@@ -1322,45 +1327,62 @@ public function verifyGuestForm(Request $request)
         return response()->json(['success' => true]);
     }
 
-    public function resendGuestCode(\Illuminate\Http\Request $request)
-    {
-        $data = $request->validate([
-            'token' => 'required|string',
-        ]);
-        $token = $data['token'];
-        $entry = cache()->get('pending_res_' . $token);
-        if (!$entry) {
-            return response()->json(['success' => false, 'message' => 'Session expired. Please start again.'], 410);
-        }
+public function resendGuestCode(Request $request)
+{
+    $data = $request->validate([
+        'token' => 'required|string',
+    ]);
 
-        // Basic throttle: allow once every 60 seconds per token
-        $throttleKey = 'pending_res_throttle_' . $token;
-        if (cache()->has($throttleKey)) {
-            return response()->json(['success' => false, 'message' => 'Please wait a minute before requesting a new code.'], 429);
-        }
-        cache()->put($throttleKey, true, 60);
+    $token = $data['token'];
 
-        // Generate a new code but keep the same reservation payload
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $entry['hash'] = hash('sha256', $code);
-        $entry['expires_at'] = now()->addMinutes(15);
-        cache()->put('pending_res_' . $token, $entry, 900);
+    $reservation = GuestReservation::where('token', $token)
+        ->where('is_verified', false)
+        ->first();
 
-        try {
-            $email = $entry['payload']['email'] ?? null;
-            if ($email) {
-                \Mail::send('emails.guest-otp', [
-                    'code' => $code,
-                    'expiresIn' => 15,
-                ], function($m) use ($email) {
-                    $m->to($email)->subject('SEMS Reservation Verification Code');
-                });
-            }
-        } catch (\Exception $e) {
-            \Log::error('Failed to resend verification code', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to send code. Try again later.'], 500);
-        }
-
-        return response()->json(['success' => true, 'message' => 'A new verification code has been sent.']);
+    if (! $reservation) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Session expired or already verified. Please start again.',
+        ], 410);
     }
+
+    // Basic throttle: allow once every 60 seconds per token
+    $throttleKey = 'guest_res_throttle_' . $token;
+    if (Cache::has($throttleKey)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Please wait a minute before requesting a new code.',
+        ], 429);
+    }
+    Cache::put($throttleKey, true, 60);
+
+    // Generate new code and update reservation
+    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+    $reservation->update([
+        'verification_code' => $code,
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    try {
+        Mail::send('emails.guest-otp', [
+            'code' => $code,
+            'name' => $reservation->name,
+            'expiresIn' => 15,
+        ], function ($m) use ($reservation) {
+            $m->to($reservation->email)->subject('SEMS Reservation Verification Code');
+        });
+    } catch (\Exception $e) {
+        \Log::error('Failed to resend verification code', ['error' => $e->getMessage()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to send code. Try again later.',
+        ], 500);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'A new verification code has been sent.',
+    ]);
+}
 }
