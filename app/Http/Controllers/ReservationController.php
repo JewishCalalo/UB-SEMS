@@ -696,9 +696,6 @@ public function initiate(Request $request)
     return redirect()->route('reservations.verify-guest', ['token' => $token]);
 }
 
-
-    
-
 public function verifyGuestForm(Request $request)
 {
     $token = $request->query('token');
