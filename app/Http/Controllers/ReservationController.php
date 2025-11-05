@@ -14,6 +14,7 @@ use App\Http\Requests\Reservations\ReservationUpdateRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Models\GuestReservation;
 
 use Illuminate\Support\Facades\DB;
 use App\Rules\UbaguioEmail;
@@ -677,16 +678,20 @@ class ReservationController extends Controller
         return redirect()->route('reservations.verify-guest', ['token' => $token]);
     }
 
-    public function verifyGuestForm(\Illuminate\Http\Request $request)
-    {
-        $token = $request->query('token');
-        $entry = $token ? cache()->get('pending_res_'.$token) : null;
-        if (!$entry) {
-            return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
-        }
-        $email = $entry['payload']['email'] ?? null;
-        return view('user.reservations.verify-guest', compact('token', 'email'));
+    
+
+public function verifyGuestForm(Request $request)
+{
+    $token = $request->query('token');
+    $reservation = GuestReservation::where('token', $token)->first();
+
+    if (! $reservation) {
+        return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
     }
+
+    $email = $reservation->email;
+    return view('user.reservations.verify-guest', compact('token', 'email'));
+}
 
     public function verifyGuestSubmit(\Illuminate\Http\Request $request)
     {
