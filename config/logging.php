@@ -18,7 +18,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'], // Explicitly use 'single' for file logging
+            'channels' => ['stderr', 'single'], // Stream to Render + fallback to file
             'ignore_exceptions' => false,
         ],
 
