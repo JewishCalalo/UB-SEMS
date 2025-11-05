@@ -698,21 +698,27 @@ public function initiate(Request $request)
 
 public function verifyGuestForm(Request $request)
 {
+    // Step 1: Extract token from query string
     $token = $request->query('token');
-    \Log::info('Token received:', ['token' => $token]);
+    Log::info('Token received for verification', ['token' => $token]);
 
+    // Step 2: Look up reservation by token
     $reservation = GuestReservation::where('token', $token)->first();
-    \Log::info('Reservation found:', ['reservation' => $reservation]);
+    Log::info('Reservation lookup result', ['reservation' => $reservation]);
 
+    // Step 3: Handle missing reservation
     if (! $reservation) {
+        Log::warning('No reservation found for token', ['token' => $token]);
         return redirect()->route('welcome')->with('error', 'Verification session expired. Please start again.');
     }
 
+    // Step 4: Load verification view
     return view('user.reservations.verify-guest', [
         'token' => $token,
         'email' => $reservation->email,
     ]);
 }
+
 public function verifyGuestSubmit(Request $request)
 {
     $request->validate([
