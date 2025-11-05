@@ -22,6 +22,10 @@ use App\Http\Controllers\BlacklistController;
 
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 Route::get('/welcome/search', [WelcomeController::class, 'search'])->name('welcome.search');
+Route::get('/log-test', function () {
+    \Log::info('Log test route hit');
+    return 'OK';
+});
 
 // API route for authentication check
 Route::get('/api/check-auth', [AuthCheckController::class, 'check'])->name('api.check-auth');
