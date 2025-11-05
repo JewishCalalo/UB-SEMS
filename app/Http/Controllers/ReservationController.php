@@ -637,6 +637,7 @@ class ReservationController extends Controller
 
 public function initiate(Request $request)
 {
+    // Step 1: Validate incoming data
     $data = $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|email',
@@ -653,30 +654,48 @@ public function initiate(Request $request)
         'cart_data' => 'required|string',
     ]);
 
+    // Step 2: Generate token and verification code
     $token = Str::uuid();
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-    $reservation = GuestReservation::create(array_merge($data, [
+    // Step 3: Create guest reservation record
+    $reservation = GuestReservation::create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'contact_number' => $data['contact_number'],
+        'department' => $data['department'],
+        'department_other' => $data['department_other'] ?? null,
+        'borrow_date' => $data['borrow_date'],
+        'return_date' => $data['return_date'],
+        'borrow_time' => $data['borrow_time'] ?? null,
+        'return_time' => $data['return_time'] ?? null,
+        'reason_type' => $data['reason_type'] ?? null,
+        'reason' => $data['reason'],
+        'additional_details' => $data['additional_details'] ?? null,
+        'cart_data' => $data['cart_data'],
         'token' => $token,
         'verification_code' => $code,
         'is_verified' => false,
         'expires_at' => now()->addMinutes(15),
-    ]));
+    ]);
 
+    // Step 4: Send verification email
     try {
         Mail::send('emails.guest-otp', [
             'code' => $code,
-            'name' => $data['name'],
+            'name' => $reservation->name,
             'expiresIn' => 15,
-        ], function ($m) use ($data) {
-            $m->to($data['email'])->subject('SEMS Reservation Verification Code');
+        ], function ($m) use ($reservation) {
+            $m->to($reservation->email)->subject('SEMS Reservation Verification Code');
         });
     } catch (\Exception $e) {
         \Log::error('Failed to send verification code', ['error' => $e->getMessage()]);
     }
 
+    // Step 5: Redirect to verification page
     return redirect()->route('reservations.verify-guest', ['token' => $token]);
 }
+
 
     
 
