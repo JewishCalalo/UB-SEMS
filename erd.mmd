@@ -1,0 +1,187 @@
+erDiagram
+    USERS {
+        bigint id PK
+        varchar(255) name
+        varchar(255) email UK
+        timestamp email_verified_at
+        varchar(255) password
+        enum('user','manager','admin') role
+        varchar(255) contact_number
+        varchar(255) department
+        boolean is_verified
+        boolean two_factor_enabled
+        text two_factor_secret
+        timestamp last_activity
+        varchar(100) remember_token
+        timestamp created_at
+        timestamp updated_at
+    }
+    EQUIPMENT_CATEGORIES {
+        bigint id PK
+        varchar(255) name
+        text description
+        varchar(255) icon
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    EQUIPMENT_TYPES {
+        bigint id PK
+        bigint category_id FK
+        varchar(255) name
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+    EQUIPMENT {
+        bigint id PK
+        varchar(255) name
+        bigint category_id FK
+        bigint equipment_type_id FK
+        text description
+        varchar(255) brand
+        varchar(255) model
+        int wishlist_count
+        enum condition
+        varchar(255) location
+        date purchase_date
+        date last_maintenance_date
+        boolean is_active
+        bigint created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    EQUIPMENT_IMAGES {
+        bigint id PK
+        bigint equipment_id FK
+        varchar(255) image_path
+        boolean is_primary
+        timestamp created_at
+        timestamp updated_at
+    }
+    EQUIPMENT_INSTANCES {
+        bigint id PK
+        bigint equipment_id FK
+        varchar(255) instance_code UK
+        enum condition
+        text condition_notes
+        varchar(255) location
+        boolean is_available
+        boolean is_active
+        date last_maintenance_date
+        timestamp created_at
+        timestamp updated_at
+    }
+    RESERVATIONS {
+        bigint id PK
+        varchar(255) reservation_code UK
+        bigint user_id FK
+        varchar(255) name
+        varchar(255) email
+        varchar(255) contact_number
+        varchar(255) department
+        date borrow_date
+        date return_date
+        enum status
+        text reason
+        text additional_details
+        text remarks
+        bigint approved_by FK
+        timestamp approved_at
+        date pickup_date
+        timestamp picked_up_at
+        timestamp returned_at
+        timestamp cancelled_at
+        timestamp completed_at
+        decimal(10,2) penalty_amount
+        text penalty_reason
+        timestamp created_at
+        timestamp updated_at
+    }
+    RESERVATION_ITEMS {
+        bigint id PK
+        bigint reservation_id FK
+        bigint equipment_id FK
+        int quantity_requested
+        int quantity_approved
+        timestamp created_at
+        timestamp updated_at
+    }
+    RESERVATION_ITEM_INSTANCES {
+        bigint id PK
+        bigint reservation_item_id FK
+        bigint equipment_instance_id FK
+        varchar(255) status
+        timestamp picked_up_at
+        timestamp returned_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    MAINTENANCE_RECORDS {
+        bigint id PK
+        bigint equipment_id FK
+        bigint equipment_instance_id FK
+        bigint performed_by FK
+        date maintenance_date
+        enum maintenance_type
+        text description
+        text notes
+        timestamp created_at
+        timestamp updated_at
+    }
+    RETURN_LOGS {
+        bigint id PK
+        bigint reservation_id FK
+        bigint equipment_instance_id FK
+        enum returned_condition
+        text condition_notes
+        int quantity_returned
+        int quantity_damaged
+        int quantity_lost
+        text damage_description
+        decimal(10,2) penalty_amount
+        text penalty_reason
+        bigint processed_by FK
+        timestamp returned_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    WISHLISTS {
+        bigint id PK
+        bigint equipment_id FK
+        int wishlist_count
+        timestamp created_at
+        timestamp updated_at
+    }
+    INSTANCE_RETIREMENTS {
+        bigint id PK
+        bigint equipment_instance_id FK
+        varchar(255) reason
+        text notes
+        bigint acted_by FK
+        timestamp acted_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    USERS ||--o{ RESERVATIONS : "makes"
+    USERS ||--o{ RESERVATIONS : "approves"
+    USERS ||--o{ EQUIPMENT : "creates"
+    USERS ||--o{ MAINTENANCE_RECORDS : "performs"
+    USERS ||--o{ RETURN_LOGS : "processes"
+    USERS ||--o{ INSTANCE_RETIREMENTS : "acts"
+    EQUIPMENT_CATEGORIES ||--o{ EQUIPMENT_TYPES : "has"
+    EQUIPMENT_CATEGORIES ||--o{ EQUIPMENT : "categorizes"
+    EQUIPMENT_TYPES ||--o{ EQUIPMENT : "types"
+    EQUIPMENT ||--o{ EQUIPMENT_IMAGES : "has"
+    EQUIPMENT ||--o{ MAINTENANCE_RECORDS : "has"
+    EQUIPMENT ||--o{ RESERVATION_ITEMS : "reserved in"
+    EQUIPMENT ||--o{ EQUIPMENT_INSTANCES : "has"
+    EQUIPMENT ||--o{ WISHLISTS : "wished for"
+    EQUIPMENT_INSTANCES ||--o{ MAINTENANCE_RECORDS : "has"
+    EQUIPMENT_INSTANCES ||--o{ RETURN_LOGS : "returned"
+    EQUIPMENT_INSTANCES ||--o{ INSTANCE_RETIREMENTS : "retired"
+    RESERVATIONS ||--o{ RESERVATION_ITEMS : "has"
+    RESERVATIONS ||--o{ RETURN_LOGS : "has"
+    RESERVATION_ITEMS ||--o{ RESERVATION_ITEM_INSTANCES : "has"
+    RESERVATION_ITEM_INSTANCES }o--|| EQUIPMENT_INSTANCES : "links"
+    RESERVATION_ITEM_INSTANCES }o--|| RESERVATION_ITEMS : "links"

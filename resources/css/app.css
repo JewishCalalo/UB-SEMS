@@ -1,0 +1,242 @@
+/* Import shared button styles */
+@import './components/buttons.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme additions for red/neutral palette */
+@layer base {
+  html { scroll-behavior: smooth; }
+  
+  /* Hide scrollbar when not needed */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+  }
+  
+  /* Hide scrollbar for elements that don't need it */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition;
+  }
+  .section-rose {
+    @apply bg-rose-50/60 border border-red-100 rounded-lg;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500;
+  }
+  .link-primary {
+    @apply text-red-600 hover:text-red-700;
+  }
+  /* KPI emphasis */
+  .kpi {
+    @apply relative bg-white rounded-xl border border-gray-200 shadow-sm transition transform;
+  }
+  .kpi:hover { @apply shadow-lg -translate-y-0.5; }
+  .kpi::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+    border-top-left-radius: 0.75rem; border-bottom-left-radius: 0.75rem;
+    background: linear-gradient(180deg, #f43f5e 0%, #ef4444 100%);
+    opacity: 0.9;
+  }
+  .thead-red {
+    @apply bg-red-600 text-white;
+  }
+  
+  /* Table pagination fixes */
+  .table-pagination {
+    @apply flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4;
+  }
+  
+  .table-pagination-left {
+    @apply flex items-center space-x-6;
+  }
+  
+  .table-pagination-right {
+    @apply flex items-center space-x-2;
+  }
+  
+  .rows-per-page {
+    @apply flex items-center space-x-4;
+  }
+  
+  .rows-per-page select {
+    @apply px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white;
+  }
+  
+  .rows-per-page-label {
+    @apply text-sm text-gray-700 font-medium;
+  }
+  
+  .pagination-info {
+    @apply text-sm text-gray-700;
+  }
+  
+  /* Maintenance overview fixes */
+  .maintenance-overview {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+  
+  .maintenance-stat {
+    @apply bg-white p-6 rounded-lg border border-gray-200 shadow-sm;
+  }
+  
+  .maintenance-stat-header {
+    @apply flex items-center justify-between mb-4;
+  }
+  
+  .maintenance-stat-value {
+    @apply text-3xl font-bold;
+  }
+  
+  /* Database backup fixes */
+  .backup-section {
+    @apply space-y-6;
+  }
+  
+  .backup-card {
+    @apply bg-white p-6 rounded-lg border border-gray-200 shadow-sm;
+  }
+  
+  .backup-form {
+    @apply space-y-6;
+  }
+  
+  .backup-info {
+    @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+  }
+}
+
+/* Mobile-responsive modal fixes */
+.swal2-popup {
+  @apply max-w-[95vw] sm:max-w-xs md:max-w-sm lg:max-w-md !important;
+  margin: 1rem !important;
+}
+
+/* Custom SweetAlert2 popup width */
+.swal-custom-popup {
+  @apply max-w-[95vw] sm:max-w-xs md:max-w-sm lg:max-w-md !important;
+  margin: 1rem !important;
+}
+
+.swal2-popup .swal2-title {
+  @apply text-lg sm:text-xl md:text-2xl !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.swal2-popup .swal2-html-container {
+  @apply text-sm sm:text-base !important;
+  margin: 0.5rem 1rem !important;
+}
+
+.swal2-popup .swal2-actions {
+  @apply flex-col sm:flex-row gap-2 sm:gap-3 !important;
+  margin: 1rem !important;
+}
+
+.swal2-popup .swal2-confirm,
+.swal2-popup .swal2-cancel {
+  @apply w-full sm:w-auto px-4 py-2 text-sm sm:text-base !important;
+}
+
+/* Wider popup for reservation modal only */
+.swal-popup-reservation {
+  width: 56rem !important; /* ~896px */
+  max-width: 95vw !important;
+}
+
+/* Mobile-responsive form elements in modals */
+.swal2-popup input,
+.swal2-popup textarea,
+.swal2-popup select {
+  @apply w-full px-3 py-2 text-sm sm:text-base !important;
+}
+
+.swal2-popup label {
+  @apply text-sm sm:text-base !important;
+}
+
+/* Equipment details section improvements */
+.equipment-details-card {
+  @apply bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm;
+}
+
+.equipment-details-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+}
+
+.equipment-details-title {
+  @apply text-lg sm:text-xl font-bold text-gray-900;
+}
+
+.equipment-details-description {
+  @apply text-sm sm:text-base text-gray-600;
+}
+
+.equipment-details-actions {
+  @apply flex flex-col sm:flex-row gap-3;
+}
+
+/* Manage equipment section improvements */
+.manage-equipment-card {
+  @apply bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm;
+}
+
+.manage-equipment-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+}
+
+.manage-equipment-title {
+  @apply text-lg sm:text-xl font-bold text-gray-900;
+}
+
+.manage-equipment-description {
+  @apply text-sm sm:text-base text-gray-600;
+}
+
+.manage-equipment-buttons {
+  @apply flex flex-col sm:flex-row gap-3;
+}
+
+/* Action legend improvements */
+.action-legend {
+  @apply flex flex-wrap gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200;
+}
+
+.action-legend-item {
+  @apply flex items-center gap-2 text-xs sm:text-sm text-gray-700;
+}
+
+.action-legend-icon {
+  @apply w-4 h-4 sm:w-5 sm:h-5;
+}
