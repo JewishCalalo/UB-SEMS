@@ -15,6 +15,11 @@ if [ ! -f "$DB_PATH" ]; then
     chmod 775 "$DB_PATH"
 fi
 
+# Ensure Vite manifest is linked
+if [ ! -f "public/build/manifest.json" ]; then
+    echo "Vite manifest not found. You may need to rebuild assets."
+fi
+
 # Run Laravel post-install scripts
 php artisan config:clear
 php artisan config:cache
