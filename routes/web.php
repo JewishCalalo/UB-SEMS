@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\EquipmentTypeController;
 use App\Http\Controllers\BlacklistController;
+use Illuminate\Support\Facades\Http;
 
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 Route::get('/welcome/search', [WelcomeController::class, 'search'])->name('welcome.search');
@@ -34,6 +35,32 @@ Route::get('/mail-test', function () {
     });
 
     return 'Mail sent';
+});
+
+
+
+Route::get('/mailtrap-api-test', function () {
+    $response = Http::withToken('YOUR_API_TOKEN')
+        ->post('https://send.api.mailtrap.io/api/send', [
+            'to' => [
+                [
+                    'email' => 'billydhenclir@gmail.com',
+                    'name' => 'Billy Dhenclir'
+                ]
+            ],
+            'from' => [
+                'email' => 'mailtrap@demomailtrap.com',
+                'name' => 'UB SEMS'
+            ],
+            'subject' => 'Test Email via Mailtrap API',
+            'text' => 'This is a test email sent using Mailtrap API.',
+            'category' => 'Verification'
+        ]);
+
+    return [
+        'status' => $response->status(),
+        'body' => $response->json(),
+    ];
 });
 
 

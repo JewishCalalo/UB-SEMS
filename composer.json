@@ -7,11 +7,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-gd": "*",
         "barryvdh/laravel-dompdf": "^3.1",
+        "guzzlehttp/guzzle": "*",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "resend/resend-laravel": "^0.21.0",
-        "ext-gd": "*",
         "symfony/process": "^7.3"
     },
     "require-dev": {
