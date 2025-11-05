@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
     {
         if (!extension_loaded('gd')) {
             Log::error('PHP GD extension is missing. DomPDF needs GD to process images. Enable GD in php.ini (e.g., extension=gd) and restart PHP.');
+        }
+
+        if (env('APP_ENV') === 'production') {
+            URL::forceScheme('https');
         }
     }
 }
