@@ -18,7 +18,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'], // ← explicitly use 'single' for file logging
+            'channels' => ['single'], // Explicitly use 'single' for file logging
             'ignore_exceptions' => false,
         ],
 
