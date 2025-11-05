@@ -1,8 +1,8 @@
 FROM php:8.2-cli
 
-# Install system dependencies
+# Install system dependencies including oniguruma support
 RUN apt-get update && apt-get install -y \
-    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libxml2-dev \
+    libzip-dev unzip git curl sqlite3 libsqlite3-dev zlib1g-dev gnupg libxml2-dev libonig-dev \
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip pdo pdo_sqlite mbstring bcmath
 
