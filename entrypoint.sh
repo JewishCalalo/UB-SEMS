@@ -21,4 +21,4 @@ php artisan db:seed --force
 
 # Start Laravel's built-in server on Render's required port
 echo "Starting Laravel server on port 10000..."
-php -S 0.0.0.0:10000 -t public
+php -S 0.0.0.0:${PORT:-10000} -t public
